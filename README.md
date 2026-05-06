@@ -76,6 +76,28 @@ tsx src/3-tool-calling.ts 北京
 
 源文件：[3-tool-calling.ts](src/3-tool-calling.ts)
 
+### 2.6 真实 API 工具调用示例
+
+在 2.5 的基础上，将工具的内部实现从硬编码数据替换为真实的天气 API 调用（[wttr.in](https://wttr.in)），无需 API Key，开箱即用。演示工具如何接入外部 API 获取实时数据：
+
+```bash
+npm run demo:tool-calling-api
+# 也可以指定城市
+tsx src/4-tool-calling-api.ts 北京
+```
+
+源文件：[4-tool-calling-api.ts](src/4-tool-calling-api.ts)
+
+## 关于工具调用
+
+大模型虽然强大，但只能生成文本，无法：
+
+- 查询实时数据（天气、股价、新闻）
+- 操作外部系统（数据库、文件系统）
+- 执行精确计算（数学公式验证）
+
+**工具调用（Tool Calling）** 让模型从"文本生成器"升级为"任务执行器"，以上举得就是天气的例子
+
 ## 构建与类型检查
 
 ```bash

@@ -8,6 +8,7 @@
     "demo:messages": "tsx src/1-messages.ts",
     "demo:tool-message": "tsx src/2-tool-message.ts",
     "demo:tool-calling": "tsx src/3-tool-calling.ts",
+    "demo:tool-calling-api": "tsx src/4-tool-calling-api.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit"
   },
