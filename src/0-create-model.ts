@@ -1,4 +1,4 @@
-import dotenv from "dotenv";
+import dotenv from "dotenv"; // 加载环境变量中的模型 API 密钥
 import { ChatOpenAI } from "@langchain/openai";
 
 dotenv.config();
@@ -7,7 +7,11 @@ const llm = new ChatOpenAI({
   model: "qwen-plus",
   apiKey: process.env.QWEN_API_KEY,
   temperature: 0.7,
-  streamUsage: false,
+  streamUsage: false, // 是否开启流式返回，默认 false
+  // maxTokens: 1000, // 最大Tokens
+  // maxRetries: 6, // 最大重试次数
+  // timeout: undefined, // 超时时间
+  logprobs: true,
   configuration: {
     baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
   },
