@@ -2,7 +2,7 @@
 
 > LangChain.js 大模型调用方式教学演示
 
-LangChain.js 是连接大模型与应用的核心框架，用极少量代码即可对接几乎所有主流大模型，无需关心底层接口差异。本项目以千问大模型为例，通过案例演示工程化提示词（PromptTemplate）、链式调用（LCEL）、案例：AI 面试助手（Interview Assistant）等核心用法。
+LangChain.js 是连接大模型与应用的核心框架，用极少量代码即可对接几乎所有主流大模型，无需关心底层接口差异。本项目以千问大模型为例，通过 4 个递进案例演示工程化提示词（PromptTemplate）、链式调用（LCEL）等核心用法。
 
 ## 环境要求
 
@@ -27,10 +27,10 @@ QWEN_API_KEY=your-api-key-here
 ```
 src/
 ├── 0-create-model.ts        创建模型对象
-├── 1-prompt-template.ts     PromptTemplate 基础用法
-├── 2-chain.ts               LCEL 链式调用
-├── 3-interview-assistant.ts AI 面试助手示例
-└── 6-tool-calling.ts        完整工具调用
+├── 1-prompt-template.ts     PromptTemplate：模板 + 参数分离
+├── 2-chain.ts               LCEL 链式调用：prompt.pipe(llm)
+├── 3-interview-assistant.ts 案例：AI 面试助手
+└── 4-lcel-complete.ts       LCEL 三节点链：prompt → model → parser
 ```
 
 ## 实战演示
@@ -80,6 +80,16 @@ npm run demo:interview
 ```
 
 源文件：[3-interview-assistant.ts](src/3-interview-assistant.ts)
+
+### 2.6 LCEL 完整案例：三节点链
+
+在链中加入 `StringOutputParser`，展示 `prompt → model → parser` 三节点数据流，理解"一切皆可拼接"的设计思想：
+
+```bash
+npm run demo:lcel
+```
+
+源文件：[4-lcel-complete.ts](src/4-lcel-complete.ts)
 
 ## 构建与类型检查
 

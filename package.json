@@ -8,6 +8,7 @@
     "demo:prompt-template": "tsx src/1-prompt-template.ts",
     "demo:chain": "tsx src/2-chain.ts",
     "demo:interview": "tsx src/3-interview-assistant.ts",
+    "demo:lcel": "tsx src/4-lcel-complete.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit"
   },
