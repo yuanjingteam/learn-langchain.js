@@ -1,8 +1,13 @@
 # learn-langchain.js
 
-> LangChain.js 大模型调用方式教学演示
+> LangChain.js LCEL 教学演示：从 PromptTemplate 到任务拆解
 
-LangChain.js 是连接大模型与应用的核心框架，用极少量代码即可对接几乎所有主流大模型，无需关心底层接口差异。本项目以千问大模型为例，通过 4 个递进案例演示工程化提示词（PromptTemplate）、链式调用（LCEL）等核心用法。
+本项目通过一个完整的"前端知识卡片生成器"案例，演示 LangChain.js 的核心工程思想：
+
+- **PromptTemplate**：把 Prompt 拆成模板 + 参数，解决字符串拼接的可维护性问题
+- **LCEL（链式调用）**：用 `.pipe()` 描述数据流，替代命令式的步骤控制
+- **任务拆解**：复杂任务拆成多个单一目标，每个子链只做一件事
+- **RunnableSequence**：把多个 Runnable 串成一条流水线，实现自动数据接力
 
 ## 环境要求
 
@@ -22,74 +27,82 @@ npm install
 QWEN_API_KEY=your-api-key-here
 ```
 
-## 项目结构
-
-```
-src/
-├── 0-create-model.ts        创建模型对象
-├── 1-prompt-template.ts     PromptTemplate：模板 + 参数分离
-├── 2-chain.ts               LCEL 链式调用：prompt.pipe(llm)
-├── 3-interview-assistant.ts 案例：AI 面试助手
-└── 4-lcel-complete.ts       LCEL 三节点链：prompt → model → parser
-```
-
-## 实战演示
-
-### 2.1 导入相关依赖模块
-
-```ts
-import dotenv from "dotenv";
-import { ChatOpenAI } from "@langchain/openai";
-dotenv.config();
-```
-
-### 2.2 创建模型对象
+## 运行
 
 ```bash
 npm run dev
 ```
 
-源文件：[0-create-model.ts](src/0-create-model.ts)
+源文件：[src/runnable-sequence.ts](src/runnable-sequence.ts)
 
-### 2.3 PromptTemplate 基础用法
+## 案例解析
 
-将 Prompt 拆成：模板（结构） + 参数（数据），解决字符串拼接的可维护性问题。
+### 案例目标
 
-```bash
-npm run demo:prompt-template
+输入一个前端概念（如"闭包"），自动生成：
+
+1. **详细解释**（给新人看，不超过 300 字）
+2. **精简要点**（3 个核心要点，每点不超过 20 字）
+3. **JSON 结构**（方便前端渲染）
+
+### 数据流全景
+
+```
+输入 { topic: "闭包" }
+  ↓
+[任务A] explainChain → 详细解释文本
+  ↓
+[任务B] summaryChain → 3 个核心要点
+  ↓
+[任务C] formatChain → JSON 结构化结果
 ```
 
-源文件：[1-prompt-template.ts](src/1-prompt-template.ts)
+### 代码结构
 
-### 2.4 链式调用（LCEL）
+| 部分 | 说明 |
+|---|---|
+| **PromptTemplate** | 三个模板分别负责解释、总结、格式化 |
+| **子链** | `explainChain` / `summaryChain` / `formatChain`，每个只做一件事 |
+| **RunnableSequence** | 把三个子链串成流水线，数据自动接力 |
 
-使用 `.pipe()` 将模板和模型串联，一次 `invoke` 自动完成数据注入和模型调用：
+### 核心代码片段
 
-```bash
-npm run demo:chain
+```ts
+// 每个子链：PromptTemplate → LLM → StringOutputParser
+const explainChain = explainPrompt.pipe(llm).pipe(parser);
+
+// 串联成流水线：Step1 → Step2 → Step3
+const fullChain = RunnableSequence.from([
+  async (input) => {
+    const explanation = await explainChain.invoke({ topic: input.topic });
+    return { explanation };
+  },
+  async (data) => {
+    const summary = await summaryChain.invoke({ explanation: data.explanation });
+    return { explanation: data.explanation, summary };
+  },
+  async (data) => {
+    const json = await formatChain.invoke({
+      explanation: data.explanation,
+      summary: data.summary,
+    });
+    return json;
+  },
+]);
+
+// 一次 invoke，数据自动流过所有步骤
+const result = await fullChain.invoke({ topic: "闭包" });
 ```
 
-源文件：[2-chain.ts](src/2-chain.ts)
+### 关键概念
 
-### 2.5 真实项目示例：AI 面试助手
-
-基于 PromptTemplate + 链式调用，实现多角色面试问答，只需修改模板即可扩展：
-
-```bash
-npm run demo:interview
-```
-
-源文件：[3-interview-assistant.ts](src/3-interview-assistant.ts)
-
-### 2.6 LCEL 完整案例：三节点链
-
-在链中加入 `StringOutputParser`，展示 `prompt → model → parser` 三节点数据流，理解"一切皆可拼接"的设计思想：
-
-```bash
-npm run demo:lcel
-```
-
-源文件：[4-lcel-complete.ts](src/4-lcel-complete.ts)
+| 概念 | 说明 |
+|---|---|
+| **Task Decomposition** | 一个 Prompt 同时做多件事会"注意力分散"，拆成多个单一任务效果更好 |
+| **Runnable** | LangChain 中所有组件（PromptTemplate、LLM、Parser）都实现了 Runnable 接口，拥有 `invoke` / `stream` / `batch` 方法 |
+| **.pipe()** | 把两个 Runnable 串联，上游的输出自动传给下游的输入 |
+| **RunnableSequence** | 把多个 Runnable 按顺序串成一条流水线，数据自动接力 |
+| **数据接力** | 每一步的输出成为下一步的输入，无需手动传递中间变量 |
 
 ## 构建与类型检查
 
