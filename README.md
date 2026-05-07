@@ -254,16 +254,32 @@ let currentStepIndex = 0;
 
 while (currentStepIndex < steps.length) {
   const currentStep = steps[currentStepIndex];
-  const result = await executeStep(currentStep);
+  const result = await executeStep(currentStep);   // 调用工具获取真实数据
   currentStepIndex++;
 
-  // Replanner 评估剩余计划是否还有必要继续
   const replanResult = await shouldReplan(task, completed, steps.slice(currentStepIndex));
 
   if (replanResult.status === "complete") {
     return replanResult.result;       // 任务完成
   }
   // 否则继续执行下一步
+}
+```
+
+Executor 内部会尝试调用搜索工具获取真实数据，再由 LLM 基于工具结果生成回答：
+
+```ts
+async function executeStep(step: string) {
+  const searchTool = tools.find((t) => t.name === "search");
+  if (searchTool) {
+    const searchResult = await searchTool.execute(step);
+    if (searchResult && !searchResult.startsWith("未找到")) {
+      // 有搜索结果：LLM 基于工具结果生成回答
+      return await summaryPrompt.invoke({ step, result: searchResult });
+    }
+  }
+  // 无搜索结果：LLM 直接回答
+  return await executorPrompt.invoke({ step });
 }
 ```
 
