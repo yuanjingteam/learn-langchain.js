@@ -4,7 +4,11 @@
   "type": "module",
   "description": "LangChain.js 学习项目，通过实践掌握 LangChain.js 的核心概念与使用方式。",
   "scripts": {
-    "dev": "tsx src/runnable-sequence.ts",
+    "dev:react": "tsx src/react-agent.ts",
+    "dev:react-plus": "tsx src/react-agent-plus.ts",
+    "dev:tool-calling": "tsx src/tool-calling-agent.ts",
+    "dev:plan": "tsx src/plan-and-execute.ts",
+    "dev:plan-graph": "tsx src/plan-and-execute-langgraph.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit"
   },
@@ -13,8 +17,10 @@
   "license": "ISC",
   "dependencies": {
     "@langchain/core": "^1.1.44",
+    "@langchain/langgraph": "^1.3.0",
     "@langchain/openai": "^1.4.5",
     "dotenv": "^17.4.2",
+    "langchain": "^1.4.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
