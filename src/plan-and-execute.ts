@@ -103,14 +103,30 @@ async function planTask(task: string): Promise<string[]> {
 }
 
 // ---------- Executor：执行单个步骤 ----------
+// Executor 负责调用工具获取真实数据，再由 LLM 基于工具结果生成回答
 async function executeStep(step: string): Promise<string> {
+  const searchTool = tools.find((t) => t.name === "search");
+  if (searchTool) {
+    const result = await searchTool.execute(step);
+    if (result && !result.startsWith("未找到")) {
+      const summaryPrompt = PromptTemplate.fromTemplate(`
+      基于以下搜索结果，完成指定任务，简洁明了地回答。
+
+      任务：{step}
+      搜索结果：{result}
+
+      请直接输出结果。
+      `);
+      const chain = summaryPrompt.pipe(llm).pipe(parser);
+      return await chain.invoke({ step, result });
+    }
+  }
+
   const executorPrompt = PromptTemplate.fromTemplate(`
-  你是一个任务执行专家。请执行以下步骤，并返回执行结果。
+请执行以下步骤，简洁明了地返回结果。
 
-  步骤：{step}
-
-  请直接返回执行结果，简洁明了。
-  `);
+步骤：{step}
+`);
   const chain = executorPrompt.pipe(llm).pipe(parser);
   return await chain.invoke({ step });
 }
@@ -126,8 +142,10 @@ const replannerPrompt = PromptTemplate.fromTemplate(`
 {remaining}
 
 请判断：
-1. 如果任务已经完成，返回：{{"status": "complete", "result": "最终结果"}}
-2. 如果需要继续执行，返回：{{"status": "replan", "steps": ["新步骤1", "新步骤2"]}}
+1. 如果任务已经完成，返回：{{"status": "complete", "result": "基于已完成步骤的实际总结内容"}}
+2. 如果需要继续执行，返回：{{"status": "continue"}}
+
+注意：result 字段必须是基于上面执行结果的真实总结，禁止使用占位符。
 
 请直接输出 JSON。
 `);
@@ -153,68 +171,60 @@ async function shouldReplan(
     }
   } catch {}
 
-  return { status: "replan", steps: remaining };
+  return { status: "continue" };
+}
+
+// ---------- 生成最终总结 ----------
+async function generateSummary(task: string, completed: string[]): Promise<string> {
+  const summaryPrompt = PromptTemplate.fromTemplate(`
+请根据以下执行结果，生成一个简洁的最终总结。
+
+任务：{task}
+执行结果：
+{results}
+
+请用 2-3 句话总结。
+`);
+  const chain = summaryPrompt.pipe(llm).pipe(parser);
+  return await chain.invoke({
+    task,
+    results: completed.map((r, i) => `步骤${i + 1}：${r}`).join("\n"),
+  });
 }
 
 // ---------- Plan & Execute 主循环 ----------
-async function planAndExecute(task: string, maxIterations: number = 10) {
+async function planAndExecute(task: string) {
   console.log(`📋 任务：${task}\n`);
 
-  // 1. 制定初始计划
   let steps = await planTask(task);
   console.log("📝 初始计划：");
   steps.forEach((step, i) => console.log(`  ${i + 1}. ${step}`));
   console.log("");
 
   const completedResults: string[] = [];
-  let iteration = 0;
+  let currentStepIndex = 0;
 
-  while (steps.length > 0 && iteration < maxIterations) {
-    const currentStep = steps.shift()!;
-    console.log(`\n🔄 执行步骤：${currentStep}`);
+  while (currentStepIndex < steps.length) {
+    const currentStep = steps[currentStepIndex];
+    console.log(`\n🔄 执行步骤 [${currentStepIndex + 1}/${steps.length}]：${currentStep}`);
 
-    // 2. 执行当前步骤
     const result = await executeStep(currentStep);
     console.log(`  ✅ 结果：${result}`);
     completedResults.push(result);
+    currentStepIndex++;
 
-    // 3. 检查是否需要重规划
-    if (steps.length > 0) {
-      const replanResult = await shouldReplan(task, completedResults, steps);
+    const replanResult = await shouldReplan(task, completedResults, steps.slice(currentStepIndex));
 
-      if (replanResult.status === "complete") {
-        console.log("\n🎉 任务完成！");
-        console.log(`最终结果：${replanResult.result}`);
-        return replanResult.result;
-      } else if (replanResult.steps) {
-        console.log("\n📋 调整计划：");
-        replanResult.steps.forEach((step: string, i: number) =>
-          console.log(`  ${i + 1}. ${step}`)
-        );
-        steps = replanResult.steps;
-      }
+    if (replanResult.status === "complete") {
+      console.log("\n🎉 任务完成！");
+      console.log(`最终结果：${replanResult.result}`);
+      return replanResult.result;
     }
 
-    iteration++;
+    console.log("\n📋 继续执行剩余计划...");
   }
 
-  // 4. 生成最终总结
-  const summaryPrompt = PromptTemplate.fromTemplate(`
-  请根据以下执行结果，生成一个简洁的最终总结。
-
-  任务：{task}
-  执行结果：
-  {results}
-
-  请用 2-3 句话总结。
-  `);
-
-  const summaryChain = summaryPrompt.pipe(llm).pipe(parser);
-  const summary = await summaryChain.invoke({
-    task,
-    results: completedResults.map((r, i) => `步骤${i + 1}：${r}`).join("\n"),
-  });
-
+  const summary = await generateSummary(task, completedResults);
   console.log("\n🎉 任务完成！");
   console.log(`最终结果：${summary}`);
   return summary;
