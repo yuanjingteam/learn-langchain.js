@@ -20,6 +20,7 @@ const llm = new ChatOpenAI({
   },
 });
 
+// 向量模型（用于将文本转换为向量表示）
 const embeddings = new OpenAIEmbeddings({
   model: "text-embedding-v2",
   apiKey: process.env.QWEN_API_KEY,
