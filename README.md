@@ -40,9 +40,9 @@ git checkout v1.0   # 大模型基础调用
 git checkout 2.0    # 消息与工具调用
 git checkout 3.0    # 提示词与链式调用
 git checkout 4.0    # 多链编排
-# git checkout 5.0  # 决策系统（开发中）
-# git checkout 6.0  # 记忆系统（开发中）
-# git checkout 7.0  # RAG 全流程（开发中）
+git checkout 5.0  # 决策系统
+git checkout 6.0  # 记忆系统
+git checkout 7.0  # RAG 全流程
 ```
 
 ## 各分支详解
