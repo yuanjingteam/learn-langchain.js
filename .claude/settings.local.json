@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(node:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(mv index.ts vector-store.ts)",
+      "Bash(mv index_optimized.ts rag-basic.ts)",
+      "Bash(mv index_optimized_final.ts rag-chain.ts)"
     ]
   }
 }
