@@ -5,7 +5,12 @@
       "Bash(npm run:*)",
       "Bash(mv index.ts vector-store.ts)",
       "Bash(mv index_optimized.ts rag-basic.ts)",
-      "Bash(mv index_optimized_final.ts rag-chain.ts)"
+      "Bash(mv index_optimized_final.ts rag-chain.ts)",
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(npm start *)",
+      "Bash(grep -E \"\\\\.ts$|\\\\.json$\")",
+      "Bash(git rm *)"
     ]
   }
 }
