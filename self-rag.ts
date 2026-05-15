@@ -128,11 +128,11 @@ async function gradeDocuments(state: GraphState): Promise<Partial<GraphState>> {
   console.log("📝 [grade_documents] 评估文档相关性");
   const prompt = PromptTemplate.fromTemplate(
     `你是文档相关性评分员。判断下面这段文档是否包含回答用户问题所需的信息。
-仅输出 "yes" 或 "no"。
+    仅输出 "yes" 或 "no"。
 
-用户问题：{question}
-文档内容：
-{content}`
+    用户问题：{question}
+    文档内容：
+    {content}`
   );
 
   const filtered: Document[] = [];
@@ -158,12 +158,12 @@ async function generate(state: GraphState): Promise<Partial<GraphState>> {
   const prompt = PromptTemplate.fromTemplate(
     `你是问答助手。请仅根据下面的上下文回答问题，禁止编造。
 
-上下文：
-{context}
+    上下文：
+    {context}
 
-问题：{question}
+    问题：{question}
 
-要求：简洁、准确、有条理。如果上下文不足以回答，明确说明。`
+    要求：简洁、准确、有条理。如果上下文不足以回答，明确说明。`
   );
   const chain = prompt.pipe(llm).pipe(parser);
   const generation = await chain.invoke({
@@ -178,9 +178,9 @@ async function transformQuery(state: GraphState): Promise<Partial<GraphState>> {
   console.log("♻️  [transform_query] 重写问题以提升检索效果");
   const prompt = PromptTemplate.fromTemplate(
     `原问题在向量库中检索效果不佳，请改写以提升语义检索召回率。
-保持意图不变，可换用近义词、补充上下文。只输出改写后的问题，不要解释。
+    保持意图不变，可换用近义词、补充上下文。只输出改写后的问题，不要解释。
 
-原问题：{question}`
+    原问题：{question}`
   );
   const chain = prompt.pipe(llm).pipe(parser);
   const rewritten = (await chain.invoke({ question: state.question })).trim();
@@ -209,16 +209,16 @@ async function gradeGeneration(
   console.log("🔎 [grade_generation] 评估答案质量");
   const context = state.documents.map((d) => d.pageContent).join("\n---\n");
   const prompt = `判断下面的答案：
-1) 是否完全基于上下文（supported: yes/no）
-2) 是否真的回答了用户问题（useful: yes/no）
+  1) 是否完全基于上下文（supported: yes/no）
+  2) 是否真的回答了用户问题（useful: yes/no）
 
-上下文：
-${context}
+  上下文：
+  ${context}
 
-问题：${state.question}
+  问题：${state.question}
 
-答案：
-${state.generation}`;
+  答案：
+  ${state.generation}`;
 
   const grade = await genGrader.invoke(prompt);
   console.log(`   supported=${grade.supported}, useful=${grade.useful}`);

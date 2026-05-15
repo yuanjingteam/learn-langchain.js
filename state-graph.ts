@@ -29,10 +29,10 @@ if (!apiKey) {
 //    Annotation.Root 描述状态结构，每个字段可以指定 reducer（合并策略）
 // ============================================================
 const StateAnnotation = Annotation.Root({
-  topic: Annotation<string>(),
-  explanation: Annotation<string>(),
-  summary: Annotation<string>(),
-  formatted: Annotation<string>(),
+  topic: Annotation<string>(), // 输入：{ topic: "闭包" }
+  explanation: Annotation<string>(), // 输出：{ explanation: "闭包是一种在函数内部定义的变量，它可以访问函数外部的变量。" }
+  summary: Annotation<string>(), // 输出：{ summary: "- 闭包是一种在函数内部定义的变量，它可以访问函数外部的变量。\n- 闭包可以用于封装状态和行为，实现模块化开发。\n- 闭包可以用于实现私有变量，保护数据安全。" }
+  formatted: Annotation<string>(), // 输出：{ formatted: JSON.stringify({ topic: "闭包", explanation: "闭包是一种在函数内部定义的变量，它可以访问函数外部的变量。", summary: "- 闭包是一种在函数内部定义的变量，它可以访问函数外部的变量。\n- 闭包可以用于封装状态和行为，实现模块化开发。\n- 闭包可以用于实现私有变量，保护数据安全。 }) }
 });
 
 type GraphState = typeof StateAnnotation.State;
@@ -71,8 +71,8 @@ async function summarizeNode(state: GraphState): Promise<Partial<GraphState>> {
   const prompt = PromptTemplate.fromTemplate(
     `根据以下解释，提炼 3 个最核心的要点，每条不超过 20 字，用「- 」开头分行列出。
 
-解释：
-{explanation}`
+    解释：
+    {explanation}`
   );
   const chain = prompt.pipe(llm).pipe(parser);
   const summary = await chain.invoke({ explanation: state.explanation });
@@ -84,12 +84,12 @@ async function formatNode(state: GraphState): Promise<Partial<GraphState>> {
   console.log("🟣 [format] 输出为 JSON 结构");
   const prompt = PromptTemplate.fromTemplate(
     `将下列内容整理为一个 JSON 对象，仅输出 JSON，不要任何解释或代码块标记。
-字段：topic, explanation, keyPoints（数组）。
+    字段：topic, explanation, keyPoints（数组）。
 
-主题：{topic}
-解释：{explanation}
-要点：
-{summary}`
+    主题：{topic}
+    解释：{explanation}
+    要点：
+    {summary}`
   );
   const chain = prompt.pipe(llm).pipe(parser);
   const formatted = await chain.invoke({
